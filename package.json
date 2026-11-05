@@ -1,0 +1,21 @@
+{
+  "name": "gamers-room",
+  "private": true,
+  "version": "0.1.0",
+  "description": "THE GAMER'S ROOM: QR entry experience for https://ahshika.github.io/gamers-room/",
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "qr": "node tools/generate-qr.mjs",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "jsqr": "1.4.0",
+    "pngjs": "5.0.0",
+    "qrcode": "1.5.4",
+    "vitest": "5.1.0"
+  }
+}

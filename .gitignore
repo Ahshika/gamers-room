@@ -1,0 +1,4 @@
+node_modules/
+*.log
+# personal Claude Code settings stay on this machine
+.claude/
