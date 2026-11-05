@@ -89,4 +89,4 @@ THE DEVELOPER'S ROOM (`D:/Project/Programes/THE DEVELOPER'S ROOM`) has reusable 
 ## 5. Decisions
 
 1. **Worlds behind the portal** (owner, 2026-11-05): one realm per game from `games.json`, plus One Brain's real puzzle worlds with its real screenshots. See [ARCHITECTURE.md](ARCHITECTURE.md) §1.
-2. **Still open:** real-time Three.js for the final visuals versus a pre-rendered Blender cinematic (as THE DEVELOPER'S ROOM ended up doing). Decide after the Phase 2 prototype has been seen on real phones.
+2. **Rendering** (owner, 2026-11-05, after the Phase 2 prototype ran smoothly on their phone): real-time Three.js with Blender-made architecture, not a pre-rendered video.

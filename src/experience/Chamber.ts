@@ -18,9 +18,11 @@ import {
   ShaderMaterial,
   SphereGeometry,
   Vector3,
+  type BufferGeometry,
   type Scene,
 } from 'three';
 import { mulberry32 } from '../utils/random';
+import { MONOLITH_DESIGN, type ChamberPieces } from './Architecture';
 import { PORTAL_CENTER } from './CameraPath';
 
 const skyVertex = /* glsl */ `
@@ -62,8 +64,12 @@ export class Chamber {
   private readonly accents: MeshStandardMaterial;
   private readonly inlay: MeshBasicMaterial;
   private readonly fill: HemisphereLight;
+  /** True when the Blender-made pieces are used, false for the procedural fallback. */
+  readonly usesModel: boolean;
 
-  constructor(scene: Scene, monolithCount: number, seed = 11) {
+  /** @param pieces the Blender chamber pieces (tools/blender/build_assets.py); null builds boxes instead. */
+  constructor(scene: Scene, monolithCount: number, pieces: ChamberPieces | null = null, seed = 11) {
+    this.usesModel = pieces !== null;
     const rnd = mulberry32(seed);
     this.fog = new FogExp2(0x06050f, 0.12);
     scene.fog = this.fog;
@@ -75,20 +81,28 @@ export class Chamber {
     this.group.add(sky);
 
     const stone = new MeshStandardMaterial({ color: 0x14131b, roughness: 0.92, metalness: 0.08, flatShading: true });
+    // modelled stone carries baked AO as vertex colours; its base colour is lifted to compensate
+    const carved = new MeshStandardMaterial({ color: 0x1f1d28, roughness: 0.9, metalness: 0.08, flatShading: true, vertexColors: true });
     const floorMat = new MeshStandardMaterial({ color: 0x0c0b12, roughness: 0.55, metalness: 0.35 });
     const floor = new Mesh(new CircleGeometry(90, 64), floorMat);
     floor.rotation.x = -Math.PI / 2;
     this.group.add(floor);
 
-    // stepped dais the portal stands on
-    for (const [w, h, y] of [
-      [12, 0.3, 0.15],
-      [9.6, 0.3, 0.45],
-      [7.4, 0.3, 0.75],
-    ] as const) {
-      const step = new Mesh(new CylinderGeometry(w / 2, w / 2 + 0.15, h, 48), stone);
-      step.position.set(PORTAL_CENTER.x, y, PORTAL_CENTER.z);
-      this.group.add(step);
+    // stepped dais the portal stands on (top at y = 0.9)
+    if (pieces) {
+      const dais = new Mesh(pieces.dais, carved);
+      dais.position.set(PORTAL_CENTER.x, 0, PORTAL_CENTER.z);
+      this.group.add(dais);
+    } else {
+      for (const [w, h, y] of [
+        [12, 0.3, 0.15],
+        [9.6, 0.3, 0.45],
+        [7.4, 0.3, 0.75],
+      ] as const) {
+        const step = new Mesh(new CylinderGeometry(w / 2, w / 2 + 0.15, h, 48), stone);
+        step.position.set(PORTAL_CENTER.x, y, PORTAL_CENTER.z);
+        this.group.add(step);
+      }
     }
     // glowing inlaid rings in the floor that catch the portal's energy
     this.inlay = new MeshBasicMaterial({ color: 0xb5852f, transparent: true, opacity: 0.05 });
@@ -102,8 +116,8 @@ export class Chamber {
     // monoliths: huge silhouettes behind and around the portal, some with luminous seams
     this.accents = new MeshStandardMaterial({ color: 0x000000, emissive: new Color(0x2fd8ff), emissiveIntensity: 0.15 });
     const boxGeo = new BoxGeometry(1, 1, 1);
-    const monoliths = new InstancedMesh(boxGeo, stone, monolithCount);
     const seams = new InstancedMesh(boxGeo, this.accents, monolithCount);
+    const pillarMatrices: Matrix4[] = [];
     const m = new Matrix4();
     const q = new Quaternion();
     const s = new Vector3();
@@ -119,25 +133,35 @@ export class Chamber {
       p.set(Math.cos(a) * radius, height / 2 - 0.5, -Math.sin(a) * radius * 0.9 - 2);
       q.setFromAxisAngle(up, rnd() * Math.PI);
       const depth = 1.4 + rnd() * 1.8;
-      s.set(width, height, depth);
-      monoliths.setMatrixAt(i, m.compose(p, q, s));
+      if (pieces) {
+        // modelled pillars have their base at y = 0 and a designed size; scale them to this slot
+        const base = p.clone().setY(-0.5);
+        s.set(width / MONOLITH_DESIGN.width, height / MONOLITH_DESIGN.height, depth / MONOLITH_DESIGN.depth);
+        pillarMatrices.push(new Matrix4().compose(base, q, s));
+      } else {
+        s.set(width, height, depth);
+        pillarMatrices.push(new Matrix4().compose(p, q, s));
+      }
       // a thin luminous seam down one face, standing just proud of the stone
       const seamPos = new Vector3(0, 0, depth / 2 + 0.01).applyQuaternion(q).add(p);
       s.set(0.06, height * 0.8, 0.02);
       seams.setMatrixAt(i, m.compose(seamPos, q, s));
     }
-    this.group.add(monoliths, seams);
+    this.group.add(seams);
+    this.addVariants(pieces ? pieces.monoliths : [boxGeo], pieces ? carved : stone, pillarMatrices);
 
     // suspended architecture: broken arch segments hanging above, lit only from behind
-    const ruins = new InstancedMesh(boxGeo, stone, 7);
+    const ruinMatrices: Matrix4[] = [];
     for (let i = 0; i < 7; i++) {
       const a = Math.PI * (0.12 + 0.76 * (i / 6));
       p.set(Math.cos(a) * (20 + rnd() * 10), 30 + rnd() * 10, -34 - rnd() * 14);
       q.setFromAxisAngle(new Vector3(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).normalize(), 0.5 + rnd() * 1.2);
       s.set(3 + rnd() * 5, 1.2 + rnd() * 2, 2 + rnd() * 3);
-      ruins.setMatrixAt(i, m.compose(p, q, s));
+      // modelled ruins are already sized (~5–7 m long): scale them uniformly by the slot's length
+      if (pieces) s.setScalar(s.x / 5.5);
+      ruinMatrices.push(new Matrix4().compose(p, q, s));
     }
-    this.group.add(ruins);
+    this.addVariants(pieces ? pieces.ruins : [boxGeo], pieces ? carved : stone, ruinMatrices);
 
     // lighting: dim environmental fill + cold rim from behind; the portal's key light lives in Portal
     this.fill = new HemisphereLight(0x3a42a0, 0x050308, 0.25);
@@ -146,6 +170,18 @@ export class Chamber {
     const goldAccent = new DirectionalLight(0xd9a24a, 0.18);
     goldAccent.position.set(12, 6, 10);
     this.group.add(this.fill, rim, goldAccent);
+  }
+
+  /** One InstancedMesh per geometry variant; instance i uses variant i % variants.length. */
+  private addVariants(variants: readonly BufferGeometry[], material: MeshStandardMaterial, matrices: readonly Matrix4[]): void {
+    variants.forEach((geometry, v) => {
+      const mine = matrices.filter((_, i) => i % variants.length === v);
+      if (!mine.length) return;
+      const mesh = new InstancedMesh(geometry, material, mine.length);
+      mine.forEach((mat, i) => mesh.setMatrixAt(i, mat));
+      mesh.computeBoundingSphere();
+      this.group.add(mesh);
+    });
   }
 
   update(state: ChamberState): void {

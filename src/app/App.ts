@@ -1,6 +1,7 @@
 import { experienceConfig, type ExperienceConfig } from '../config/experience.config';
 import { validateConfig } from '../config/validateConfig';
 import { buildWorldSequence, loadRealms } from '../data/realms';
+import { loadArchitecture } from '../experience/Architecture';
 import { Experience } from '../experience/Experience';
 import { Stage } from '../experience/Stage';
 import { buildWorldTextures } from '../experience/WorldTextures';
@@ -82,15 +83,16 @@ export class App {
 
     try {
       let done = 0;
-      let total = 2;
+      let total = 4; // font, games data, portal model, chamber model
       const tick = () => this.ui.setProgress(++done, total);
       const fontReady = document.fonts?.load('700 64px Cinzel').catch(() => []).then(tick) ?? Promise.resolve(tick());
+      const architectureReady = loadArchitecture(import.meta.env.BASE_URL, tick);
       const realms = await loadRealms(this.config.gamesDataUrl, this.config.intro.dataTimeoutMs);
       tick();
       const previews = buildWorldSequence(realms, this.config.intro.maxWorlds);
       total += previews.length;
       await fontReady;
-      const worlds = await buildWorldTextures(previews, import.meta.env.BASE_URL);
+      const [worlds, architecture] = await Promise.all([buildWorldTextures(previews, import.meta.env.BASE_URL), architectureReady]);
       done += worlds.length;
       this.ui.setProgress(done, total);
       if (this.state !== 'loading') {
@@ -113,8 +115,11 @@ export class App {
           onEnd: () => this.navigate(),
         },
         { speed: flags.speed, pauseAt: flags.pauseAt, calm },
+        architecture,
       );
       document.documentElement.dataset.gvWorlds = String(worlds.length);
+      const modelled = this.experience.modelled;
+      document.documentElement.dataset.gvModels = `${modelled.portal ? 'portal' : '-'},${modelled.chamber ? 'chamber' : '-'}`;
     } catch (err) {
       console.error('The gateway could not be built', err);
       this.fail('build');

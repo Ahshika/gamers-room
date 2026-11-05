@@ -9,7 +9,8 @@ Decisions are based on [PROJECT_AUDIT.md](PROJECT_AUDIT.md).
 | Integration | Separate web app at `/gamers-room/` that ends in one real navigation to `/games/` | The portfolio stays independent and keeps working if the 3D intro fails (spec §2, §17). Nothing is copied, screenshotted or iframed |
 | Skipping the portfolio's own boot screen | Set `sessionStorage['ah-games-booted']='1'` right before navigating | Same origin (`ahshika.github.io`), so the portfolio shows its menu entrance directly. No change to the live portfolio. A contract test watches the key |
 | Worlds | One **realm per game**, read at runtime from `/games/data/games.json`. Inside One Brain: its real puzzle domains as worlds, with its real screenshots | Owner decision 2026-11-05. No invented genres or details (spec §7) |
-| Rendering | Three.js, procedural geometry and shaders for the Phase 2 prototype | Proves the portal transition before any expensive Blender asset (spec §16) |
+| Rendering | Three.js. Solid architecture from Blender (Phase 3, `public/models/*.glb`); energy, runes, worlds, particles and tunnel as shaders | Owner decision 2026-11-05: real-time 3D with Blender models. The procedural Phase 2 geometry remains as the fallback when a model fails to load |
+| Model pipeline | `tools/blender/build_assets.py` → AO baked to vertex colours → `tools/optimize-models.mjs` (drop normals, weld, `KHR_mesh_quantization`) | 1 MB → 190 KB with no decoder and no WebAssembly, so the CSP stays `script-src 'self'` |
 | Timeline | GSAP, one master timeline driving a single camera progress value plus named beats | Synchronised camera, light, particles, text |
 | Build | Vite + TypeScript (strict) | Same toolchain as THE DEVELOPER'S ROOM, already verified on this machine |
 | Audio | Web Audio synthesis (drone, hum, activation swell, entry whoosh). Muted by default, sound toggle | No licensing risk, no files to download, autoplay rules respected |
@@ -41,8 +42,9 @@ src/
   data/realms.ts                games.json → realms (validation, hue = portfolio's hash)
   portfolio/PortfolioHandoff.ts single navigation, boot key, prefetch
   experience/Stage.ts           renderer, resize, DPR, render loop, dispose
-  experience/Chamber.ts         floor, monoliths, fragments, fog, lights
-  experience/Portal.ts          frame, rings, inscriptions, energy surface shader
+  experience/Architecture.ts    GLB loading, material mapping by name, quantized geometry → metres
+  experience/Chamber.ts         floor, dais, monoliths, ruins, fog, lights (models or procedural)
+  experience/Portal.ts          frame (model or procedural), rings, inscriptions, energy surface shader
   experience/Particles.ts       dimensional particles drawn toward the portal
   experience/CameraRig.ts       named camera states, aspect-adapted framing
   experience/Timeline.ts        GSAP master timeline (Scenes 01–06)

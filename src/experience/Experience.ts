@@ -2,6 +2,7 @@ import { gsap } from 'gsap';
 import { DataTexture, RGBAFormat, type Texture } from 'three';
 import type { ExperienceConfig, QualityPreset } from '../config/experience.config';
 import type { WorldPreview } from '../data/realms';
+import type { Architecture } from './Architecture';
 import { CameraPath, PORTAL_CENTER, buildKeyframes, type CameraSample } from './CameraPath';
 import { Chamber } from './Chamber';
 import { Particles } from './Particles';
@@ -60,11 +61,12 @@ export class Experience {
     private readonly worlds: readonly WorldTexture[],
     private readonly events: ExperienceEvents,
     private readonly options: { speed: number; pauseAt: number | null; calm: boolean },
+    architecture: Architecture = { portal: null, chamber: null },
   ) {
     this.blank = new DataTexture(new Uint8Array([3, 3, 8, 255]), 1, 1, RGBAFormat);
     this.blank.needsUpdate = true;
-    this.chamber = new Chamber(stage.scene, preset.monoliths);
-    this.portal = new Portal(this.blank, preset.fragments);
+    this.chamber = new Chamber(stage.scene, preset.monoliths, architecture.chamber);
+    this.portal = new Portal(this.blank, preset.fragments, architecture.portal);
     this.particles = new Particles(preset.particles, PORTAL_CENTER, stage.pixelRatio);
     stage.scene.add(this.chamber.group, this.portal.group, this.particles.points, this.tunnel.mesh);
 
@@ -86,6 +88,11 @@ export class Experience {
 
   get time(): number {
     return this.elapsed;
+  }
+
+  /** Which parts use the Blender models (the rest is the procedural fallback). */
+  get modelled(): { portal: boolean; chamber: boolean } {
+    return { portal: this.portal.usesModel, chamber: this.chamber.usesModel };
   }
 
   update(dt: number): void {

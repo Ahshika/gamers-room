@@ -21,6 +21,7 @@ import {
   type Texture,
 } from 'three';
 import { mulberry32 } from '../utils/random';
+import { applyMaterials } from './Architecture';
 import { PORTAL_CENTER, PORTAL_OPENING_RADIUS } from './CameraPath';
 
 export interface PortalState {
@@ -188,23 +189,51 @@ void main() {
 export class Portal {
   readonly group = new Group();
   readonly light: PointLight;
-  private readonly surface: ShaderMaterial;
-  private readonly inscription: ShaderMaterial;
-  private readonly runner: ShaderMaterial;
+  // assigned by buildEnergy() / buildFragments() during construction
+  private surface!: ShaderMaterial;
+  private inscription!: ShaderMaterial;
+  private runner!: ShaderMaterial;
   private readonly orbitRings: Mesh[] = [];
   /** `y` is the fragment's depth behind the portal plane (local z). */
   private readonly fragments: { mesh: Object3D; radius: number; angle: number; speed: number; y: number; bob: number }[] = [];
-  private readonly crystal: MeshStandardMaterial;
+  private crystal!: MeshStandardMaterial;
   private readonly keystoneMaterial: MeshStandardMaterial;
+  /** True when the Blender-made frame is used, false for the procedural fallback. */
+  readonly usesModel: boolean;
 
-  constructor(blank: Texture, fragmentCount: number, seed = 7) {
-    const rnd = mulberry32(seed);
+  /**
+   * @param architecture the Blender frame (tools/blender/build_assets.py); null builds the procedural one.
+   */
+  constructor(blank: Texture, fragmentCount: number, architecture: Object3D | null = null, seed = 7) {
     this.group.position.copy(PORTAL_CENTER);
 
     const stone = new MeshStandardMaterial({ color: 0x1c1a25, roughness: 0.86, metalness: 0.12, flatShading: true });
     const darkMetal = new MeshStandardMaterial({ color: 0x23242f, roughness: 0.32, metalness: 0.9 });
     this.keystoneMaterial = new MeshStandardMaterial({ color: 0x8a6a2e, roughness: 0.38, metalness: 0.85, emissive: new Color(0xb5852f), emissiveIntensity: 0.05 });
 
+    this.usesModel = architecture !== null;
+    if (architecture) {
+      // baked AO comes in as vertex colours; the base colours are lifted to compensate for it
+      applyMaterials(architecture, {
+        Stone: new MeshStandardMaterial({ color: 0x3a3648, roughness: 0.86, metalness: 0.12, flatShading: true, vertexColors: true }),
+        Gold: Object.assign(this.keystoneMaterial, { vertexColors: true, flatShading: true }),
+        DarkMetal: new MeshStandardMaterial({ color: 0x2e303c, roughness: 0.32, metalness: 0.9, flatShading: true, vertexColors: true }),
+      });
+      this.group.add(architecture);
+    } else {
+      this.buildProceduralFrame(stone, darkMetal, mulberry32(seed));
+    }
+    this.buildEnergy(blank);
+    this.buildFragments(stone, fragmentCount, mulberry32(seed + 1));
+
+    // key light from the portal
+    this.light = new PointLight(0x9b70ff, 0, 34, 1.6);
+    this.light.position.set(0, 0, 1.6);
+    this.group.add(this.light);
+  }
+
+  /** Fallback when portal.glb cannot be loaded: the same silhouette from instanced boxes. */
+  private buildProceduralFrame(stone: MeshStandardMaterial, darkMetal: MeshStandardMaterial, rnd: () => number): void {
     // 1. main architectural frame: weathered voussoir blocks
     const blocks = 30;
     const frameRadius = 3.72;
@@ -250,7 +279,9 @@ export class Portal {
       spines.setMatrixAt(i, m.compose(p, q, s.set(1, 1, 1)));
     }
     this.group.add(spines);
+  }
 
+  private buildEnergy(blank: Texture): void {
     // 5. inscribed metal ring (runes light up during the awakening)
     this.inscription = new ShaderMaterial({
       vertexShader: polarVertex,
@@ -313,7 +344,9 @@ export class Portal {
     surface.position.z = 0.02;
     surface.renderOrder = 2;
     this.group.add(surface);
+  }
 
+  private buildFragments(stone: MeshStandardMaterial, fragmentCount: number, rnd: () => number): void {
     // 4. floating fragments of stone and crystal around the gateway
     this.crystal = new MeshStandardMaterial({ color: 0x150c2e, roughness: 0.15, metalness: 0.3, emissive: new Color(0x6a3dff), emissiveIntensity: 0.05, flatShading: true });
     const shardGeo = new IcosahedronGeometry(1, 0);
@@ -327,11 +360,6 @@ export class Portal {
       this.fragments.push(frag);
       this.group.add(mesh);
     }
-
-    // key light from the portal
-    this.light = new PointLight(0x9b70ff, 0, 34, 1.6);
-    this.light.position.set(0, 0, 1.6);
-    this.group.add(this.light);
   }
 
   /** Current fragment positions in portal space (tests check they stay out of the camera corridor). */

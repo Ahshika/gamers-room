@@ -1,6 +1,7 @@
 // k6 load test of the QR entry: many phones scanning at once and downloading everything the
-// gateway needs before the intro starts. Run ONLY against a local preview (default), never
-// against GitHub Pages:  k6 run tests/performance/entry.k6.js
+// gateway needs before the intro starts: code, CSS, world images and the Blender models (not the
+// fonts). Run ONLY against a local preview (default), never against GitHub Pages:
+//   k6 run tests/performance/entry.k6.js
 // Optional: -e BASE=http://localhost:4174/gamers-room/
 import http from 'k6/http';
 import { check, group } from 'k6';
@@ -46,7 +47,8 @@ export default function () {
     const assets = [...String(page.body).matchAll(assetPattern)].map((m) => ['GET', origin + m[1], null, { tags: { kind: 'asset' } }]);
     // the HTML lists the entry, CSS and the three/gsap chunks (modulepreload); fetch them like a browser
     const worlds = ['logic', 'memory', 'pattern', 'spatial', 'word'].map((w) => ['GET', `${BASE}media/worlds/one-brain/${w}.webp`, null, { tags: { kind: 'asset' } }]);
-    const responses = http.batch([...assets, ...worlds]);
+    const models = ['portal', 'chamber'].map((m) => ['GET', `${BASE}models/${m}.glb`, null, { tags: { kind: 'asset' } }]);
+    const responses = http.batch([...assets, ...worlds, ...models]);
     for (const r of responses) check(r, { 'asset 200': (x) => x.status === 200 });
   });
 }

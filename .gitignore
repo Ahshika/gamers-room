@@ -9,3 +9,6 @@ playwright-report/
 # Blender working files and renders are large and regenerable
 blender/work/
 blender/renders/
+# raw Blender exports; the optimised copies live in public/models (node tools/optimize-models.mjs)
+blender/export/
+*.blend1

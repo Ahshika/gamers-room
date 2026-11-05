@@ -77,6 +77,21 @@ test.describe('QR entry → gateway → Games Portfolio', () => {
     await expectHandedOff(page, portfolio);
   });
 
+  test('uses the Blender models for the portal and the chamber', async ({ page }) => {
+    await page.goto('?pauseAt=1');
+    await waitForTime(page, 1);
+    await expect(page.locator('html')).toHaveAttribute('data-gv-models', 'portal,chamber');
+  });
+
+  test('if the models cannot be loaded, the procedural gateway plays and hands off', async ({ page, portfolio }) => {
+    await page.route('**/gamers-room/models/*.glb', (r) => r.fulfill({ status: 404, body: 'missing' }));
+    await page.goto('?speed=8&pauseAt=2');
+    await waitForTime(page, 2);
+    await expect(page.locator('html')).toHaveAttribute('data-gv-models', '-,-');
+    await page.goto('?speed=8');
+    await expectHandedOff(page, portfolio);
+  });
+
   test('reduced motion: calm, still portal with the messages, then the hand-off', async ({ page, portfolio }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('?speed=4');

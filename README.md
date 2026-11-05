@@ -11,7 +11,7 @@ It is independent of [The Developer's Room](https://github.com/Ahshika/developer
 4. **EVERY WORLD HAS A STORY. / EVERY GAME IS A NEW ADVENTURE.**
 5. The camera flies through the portal. The tunnel resolves into the portfolio's own background, and the real Games Portfolio opens directly on its game menu.
 
-> **Status: Phase 2 (technical prototype), procedural assets.** Final Blender assets are Phase 3. See [docs/testing/PHASE2_REPORT.md](docs/testing/PHASE2_REPORT.md).
+> **Status: Phase 3.** The portal and the chamber architecture are Blender models (`public/models`, 190 KB together) with baked ambient occlusion. The energy, runes, worlds and particles are shaders. If the models fail to load, the same scene is built procedurally. See [docs/testing/PHASE3_REPORT.md](docs/testing/PHASE3_REPORT.md).
 
 ## Stable URL (QR destination, printed, never change it)
 
@@ -19,6 +19,18 @@ It is independent of [The Developer's Room](https://github.com/Ahshika/developer
 
 It depends on the GitHub account name `Ahshika` and the repository name `gamers-room`. The repository must stay public, with Pages set to **GitHub Actions**.
 Changing where visitors end up does **not** need a new QR: edit `gamesPortfolioUrl` in `src/config/site.config.json`.
+
+## Rebuilding the 3D models (Blender 5.2, scripted)
+
+```bash
+"D:/Programs/Blender/blender.exe" --background --factory-startup --python tools/blender/build_assets.py -- blender/export blender/gameverse_assets.blend
+```
+
+```bash
+node tools/optimize-models.mjs blender/export public/models
+```
+
+The first command models the portal (frame, keystones, mechanical ring, spines, supports) and the chamber pieces (four monolith types, two ruins, the dais), bakes ambient occlusion into vertex colours and exports GLB. The second drops normals (everything is flat-shaded), welds vertices and applies `KHR_mesh_quantization`, which three.js reads with no decoder, so the CSP stays strict. The source scene is saved as `blender/gameverse_assets.blend`.
 
 ## Configuration
 
@@ -103,5 +115,6 @@ Every push to `main` runs `.github/workflows/deploy.yml`: lint, unit tests, type
 - [docs/PROJECT_AUDIT.md](docs/PROJECT_AUDIT.md): Phase 0 audit of the Games Portfolio
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): decisions, states, modules, security
 - [docs/STORYBOARD.md](docs/STORYBOARD.md): scenes and timings
-- [docs/testing/PHASE2_REPORT.md](docs/testing/PHASE2_REPORT.md): what was tested, results, open items
+- [docs/testing/PHASE2_REPORT.md](docs/testing/PHASE2_REPORT.md): Phase 2 prototype tests
+- [docs/testing/PHASE3_REPORT.md](docs/testing/PHASE3_REPORT.md): Phase 3 models, tests, results, open items
 - [LICENSES.md](LICENSES.md): assets and dependencies
