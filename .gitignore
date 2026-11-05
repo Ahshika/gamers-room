@@ -1,4 +1,11 @@
 node_modules/
+dist/
+test-results/
+playwright-report/
 *.log
+.vite/
 # personal Claude Code settings stay on this machine
 .claude/
+# Blender working files and renders are large and regenerable
+blender/work/
+blender/renders/

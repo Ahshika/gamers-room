@@ -1,21 +1,45 @@
 {
-  "name": "gamers-room",
+  "name": "the-gameverse",
   "private": true,
-  "version": "0.1.0",
-  "description": "THE GAMER'S ROOM: QR entry experience for https://ahshika.github.io/gamers-room/",
+  "version": "0.2.0",
+  "description": "THE GAMEVERSE: cinematic 3D QR entry into the games portfolio, served at https://ahshika.github.io/gamers-room/",
   "type": "module",
   "license": "UNLICENSED",
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
-    "qr": "node tools/generate-qr.mjs",
-    "test": "vitest run"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4174 --strictPort",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:contract": "vitest run --config vitest.contract.config.ts",
+    "qr": "node tools/generate-qr.mjs"
+  },
+  "dependencies": {
+    "@fontsource/cinzel": "5.3.0",
+    "gsap": "3.15.0",
+    "three": "0.187.0"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.1",
+    "@types/three": "0.187.0",
+    "eslint": "10.14.0",
+    "globals": "17.14.0",
+    "happy-dom": "21.0.4",
     "jsqr": "1.4.0",
     "pngjs": "5.0.0",
     "qrcode": "1.5.4",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vite": "8.3.5",
     "vitest": "5.1.0"
+  },
+  "overrides": {
+    "minimatch": "^11.0.1"
   }
 }

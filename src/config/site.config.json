@@ -1,4 +1,7 @@
 {
   "entryUrl": "https://ahshika.github.io/gamers-room/",
-  "portfolioUrl": "https://ahshika.github.io/"
+  "gamesPortfolioUrl": "https://ahshika.github.io/games/",
+  "gamesDataUrl": "https://ahshika.github.io/games/data/games.json",
+  "fallbackUrl": "https://ahshika.github.io/games/",
+  "allowedOrigins": ["https://ahshika.github.io"]
 }

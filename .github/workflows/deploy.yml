@@ -24,12 +24,14 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm run lint
       - run: npm test
+      # typecheck runs inside build
+      - run: npm run build
       - uses: actions/configure-pages@v5
-      # placeholder phase: the static page in site/ is published as-is
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: site
+          path: dist
 
   deploy:
     needs: build
