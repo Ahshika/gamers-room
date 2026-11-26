@@ -1,13 +1,62 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Loading…</title>
-<style>
-  html, body { margin: 0; height: 100%; background: #101418; }
-</style>
-</head>
-<body>
-<script defer id="wl-site-tag" src="https://sfqt6.com/ki9ao4wpdn/api"></script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!--GV_CSP-->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="theme-color" content="#020206" />
+    <meta name="description" content="%GV_TAGLINE% A cinematic gateway into the games of Ahmed Hassan." />
+    <link rel="canonical" href="%GV_ENTRY_URL%" />
+    <title>%GV_TITLE%</title>
+  </head>
+  <body>
+    <canvas id="scene" aria-hidden="true"></canvas>
+
+    <main id="ui">
+      <h1 class="sr-only">%GV_TITLE%: %GV_TAGLINE%</h1>
+
+      <section id="loader" class="loader" aria-live="polite">
+        <p class="loader-title">%GV_TEXT_LOADING%</p>
+        <div class="loader-bar" role="progressbar" aria-label="Loading"><span></span></div>
+        <p class="loader-count" id="loader-count"></p>
+      </section>
+
+      <div id="messages" class="messages" aria-live="polite">
+        <p id="msg1" class="msg msg-top"></p>
+        <p id="msg2" class="msg msg-bottom"></p>
+      </div>
+      <p id="caption" class="caption" aria-live="polite"></p>
+
+      <nav class="controls" aria-label="Intro controls">
+        <button id="sound" class="ctl" type="button" aria-pressed="false" hidden>Sound off</button>
+        <a id="skip" class="ctl ctl-skip" href="%GV_PORTFOLIO_URL%" hidden>Skip intro</a>
+      </nav>
+
+      <section id="fallback" class="panel" hidden>
+        <p class="panel-title">%GV_TITLE%</p>
+        <p class="panel-text" id="fallback-text"></p>
+        <a class="cta" id="fallback-link" href="%GV_PORTFOLIO_URL%">Enter the games</a>
+        <p class="panel-note" id="fallback-note"></p>
+      </section>
+
+      <section id="return" class="panel" hidden>
+        <p class="panel-title">%GV_TITLE%</p>
+        <p class="panel-text">%GV_TAGLINE%</p>
+        <a class="cta" href="%GV_PORTFOLIO_URL%" id="return-enter">Enter the games</a>
+        <button class="cta cta-ghost" type="button" id="return-replay">Watch again</button>
+      </section>
+
+      <noscript>
+        <section class="panel">
+          <p class="panel-title">%GV_TITLE%</p>
+          <p class="panel-text">%GV_TAGLINE%</p>
+          <a class="cta" href="%GV_PORTFOLIO_URL%">Enter the games</a>
+        </section>
+      </noscript>
+    </main>
+
+    <div id="cover" class="cover" aria-hidden="true"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>
